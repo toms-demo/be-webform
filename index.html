@@ -14,11 +14,14 @@
      Base domain only, once, covers every page on it.
 
   2. FORM CONNECTOR FIELD IDS
-     The input IDs below (contact_name, contact_email, etc.) must
-     exactly match the field IDs configured in the Form Connector's
-     custom form in your dev org, or the mapping silently fails.
+     collectFormData() below maps this page's inputs to the Form
+     Connector's "Form field ID" values (form-name, form-email, etc.)
+     — those are NOT the same as this page's own input element IDs.
+     If the Form Connector's field IDs change, update the keys
+     returned by collectFormData(), not the input IDs.
 ============================================================= -->
 <link rel="stylesheet" type="text/css" href="https://booking.nc-squared.com/css/n2-bookinglibrary.css"/>
+<script defer src="https://booking.nc-squared.com/js/n2-bookinglibrary.js"></script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -164,8 +167,9 @@
       <span class="form-ref">Ref. AB-26</span>
     </div>
     <div class="form-body">
-      <!-- NOTE: input IDs below must EXACTLY match the form field IDs
-           set up in the Form Connector. Change one, change both. -->
+      <!-- NOTE: these input IDs only need to match collectFormData()'s
+           getElementById() calls above — they're mapped to the Form
+           Connector's field IDs there, not used directly. -->
       <div class="field">
         <label for="contact_name">Full name</label>
         <input type="text" id="contact_name" autocomplete="name" placeholder="Gary Green">
@@ -206,8 +210,6 @@
   <div>© 2026 Alderbrook Capital Ltd. Fictional company for demonstration purposes.</div>
 </footer>
 
-<script defer src="https://booking.nc-squared.com/js/n2-bookinglibrary.js"></script>
-
 <script>
 /* =========================================================
    BOOKING ENGINE WIRING
@@ -243,21 +245,11 @@ function showStatus(msg, kind) {
   el.className = "status show " + (kind || "ok");
 }
 
-// Wait for DOMContentLoaded: our <script src> above uses "defer", which
-// only runs (in order) right before DOMContentLoaded fires. This inline
-// block has no "defer" of its own, so without this wrapper it would run
-// immediately during parsing — before n2-bookinglibrary.js has executed
-// — and n2 would always look undefined.
+// Wait for DOMContentLoaded: our <script src> in <head> uses "defer",
+// which only runs (in order) right before DOMContentLoaded fires. This
+// inline block has no "defer" of its own, so without this wrapper it
+// would run immediately during parsing, before the button exists yet.
 document.addEventListener("DOMContentLoaded", function () {
-
-  // Instantiate once at load time, not per-click — the library registers
-  // its data providers globally, and doing this on every click throws
-  // "A data provider with the id: ... has already been registered" on
-  // the second click.
-  let booking = null;
-  if (typeof n2 !== "undefined" && typeof n2.BookingLibrary !== "undefined") {
-    booking = new n2.BookingLibrary({ bookingUrl: BE_CONFIG.sharedAvailabilityPath });
-  }
 
   document.getElementById("ab-submit").addEventListener("click", function () {
     const data = collectFormData();
@@ -267,7 +259,7 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    if (!booking) {
+    if (typeof n2 === "undefined" || typeof n2.BookingLibrary === "undefined") {
       // Library script hasn't loaded yet: keeps the page demoable
       // visually without erroring.
       showStatus("Demo note: n2.BookingLibrary hasn't loaded yet. Check the script tag and your network tab.", "warn");
@@ -275,8 +267,10 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    // Show the booking flow, passing the form values
-    booking.show({
+    // Per NC Squared's Web Forms integration doc: construct fresh and
+    // call .show() at the point of submission, rather than reusing one
+    // instance across clicks.
+    new n2.BookingLibrary({ bookingUrl: BE_CONFIG.sharedAvailabilityPath }).show({
       meetingData: {
         form_values: data
       },
