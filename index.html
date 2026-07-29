@@ -218,13 +218,10 @@
    used yet.
 ========================================================== */
 const BE_CONFIG = {
-  // Everything after /s/book/ in the shared availability link,
-  // e.g. https://booking.nc-squared.com/s/book/tomsdev/tomsdev-all
-  //                                            ^^^^^^^^^^^^^^^^^^^
-  // The trailing "?cs=..." on that link looked like a tracking/
-  // session param rather than part of the path — left out below.
-  // If booking.show() errors, try adding it back in.
-  sharedAvailabilityPath: "tomsdev/tomsdev-all"
+  // n2.BookingLibrary's own error message confirms the required format:
+  // "orgUrlSlug/multiHostUrlSlug?cs=checksum" — i.e. everything after
+  // /s/book/ in the shared availability link, INCLUDING the ?cs= checksum.
+  sharedAvailabilityPath: "tomsdev/tomsdev-all?cs=li2evb9o"
 };
 
 // Form field IDs: these keys must match the Form Connector setup
@@ -252,19 +249,22 @@ document.getElementById("ab-submit").addEventListener("click", function () {
     return;
   }
 
-  if (typeof BookingLibrary === "undefined") {
+  if (typeof n2 === "undefined" || typeof n2.BookingLibrary === "undefined") {
     // Library script hasn't loaded yet (or the defer hasn't resolved):
     // keeps the page demoable visually without erroring.
-    showStatus("Demo note: BookingLibrary hasn't loaded yet. Check the script tag and your network tab.", "warn");
+    showStatus("Demo note: n2.BookingLibrary hasn't loaded yet. Check the script tag and your network tab.", "warn");
     console.log("Form data that would be passed to Booking Engine:", data);
     return;
   }
 
   // Instantiate against the shared availability rule
-  const booking = new BookingLibrary(BE_CONFIG.sharedAvailabilityPath);
+  const booking = new n2.BookingLibrary({ bookingUrl: BE_CONFIG.sharedAvailabilityPath });
 
   // Show the booking flow, passing the form values
-  booking.show(data, {
+  booking.show({
+    meetingData: {
+      form_values: data
+    },
     // onSaved callback: fires after the booking completes.
     // This is where a real customer would redirect to a thank-you
     // page and fire tracking pixels (LinkedIn conversion, GA etc.)
