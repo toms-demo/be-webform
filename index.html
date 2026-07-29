@@ -224,14 +224,16 @@ const BE_CONFIG = {
   sharedAvailabilityPath: "tomsdev/tomsdev-all?cs=li2evb9o"
 };
 
-// Form field IDs: these keys must match the Form Connector setup
+// Keys here are the Form Connector's "Form field ID" values (Custom
+// Example connector, Lead object) — they must match exactly, they are
+// NOT the same as this page's own input element IDs below.
 function collectFormData() {
   return {
-    contact_name:    document.getElementById("contact_name").value,
-    contact_email:   document.getElementById("contact_email").value,
-    contact_company: document.getElementById("contact_company").value,
-    funding_volume:  document.getElementById("funding_volume").value,
-    business_type:   document.getElementById("business_type").value
+    "form-name":    document.getElementById("contact_name").value,
+    "form-email":   document.getElementById("contact_email").value,
+    "form-company": document.getElementById("contact_company").value,
+    "form-funding": document.getElementById("funding_volume").value,
+    "form-borbro":  document.getElementById("business_type").value
   };
 }
 
@@ -241,41 +243,56 @@ function showStatus(msg, kind) {
   el.className = "status show " + (kind || "ok");
 }
 
-document.getElementById("ab-submit").addEventListener("click", function () {
-  const data = collectFormData();
+// Wait for DOMContentLoaded: our <script src> above uses "defer", which
+// only runs (in order) right before DOMContentLoaded fires. This inline
+// block has no "defer" of its own, so without this wrapper it would run
+// immediately during parsing — before n2-bookinglibrary.js has executed
+// — and n2 would always look undefined.
+document.addEventListener("DOMContentLoaded", function () {
 
-  if (!data.contact_email || !data.contact_name) {
-    showStatus("Add your name and work email so we know who to speak to.", "warn");
-    return;
+  // Instantiate once at load time, not per-click — the library registers
+  // its data providers globally, and doing this on every click throws
+  // "A data provider with the id: ... has already been registered" on
+  // the second click.
+  let booking = null;
+  if (typeof n2 !== "undefined" && typeof n2.BookingLibrary !== "undefined") {
+    booking = new n2.BookingLibrary({ bookingUrl: BE_CONFIG.sharedAvailabilityPath });
   }
 
-  if (typeof n2 === "undefined" || typeof n2.BookingLibrary === "undefined") {
-    // Library script hasn't loaded yet (or the defer hasn't resolved):
-    // keeps the page demoable visually without erroring.
-    showStatus("Demo note: n2.BookingLibrary hasn't loaded yet. Check the script tag and your network tab.", "warn");
-    console.log("Form data that would be passed to Booking Engine:", data);
-    return;
-  }
+  document.getElementById("ab-submit").addEventListener("click", function () {
+    const data = collectFormData();
 
-  // Instantiate against the shared availability rule
-  const booking = new n2.BookingLibrary({ bookingUrl: BE_CONFIG.sharedAvailabilityPath });
-
-  // Show the booking flow, passing the form values
-  booking.show({
-    meetingData: {
-      form_values: data
-    },
-    // onSaved callback: fires after the booking completes.
-    // This is where a real customer would redirect to a thank-you
-    // page and fire tracking pixels (LinkedIn conversion, GA etc.)
-    onSaved: function (event) {
-      showStatus(
-        "You're booked. A calendar invite for " +
-        (event && event.startTime ? event.startTime : "your chosen time") +
-        " is on its way to " + data.contact_email + ".", "ok"
-      );
+    if (!data["form-email"] || !data["form-name"]) {
+      showStatus("Add your name and work email so we know who to speak to.", "warn");
+      return;
     }
+
+    if (!booking) {
+      // Library script hasn't loaded yet: keeps the page demoable
+      // visually without erroring.
+      showStatus("Demo note: n2.BookingLibrary hasn't loaded yet. Check the script tag and your network tab.", "warn");
+      console.log("Form data that would be passed to Booking Engine:", data);
+      return;
+    }
+
+    // Show the booking flow, passing the form values
+    booking.show({
+      meetingData: {
+        form_values: data
+      },
+      // onSaved callback: fires after the booking completes.
+      // This is where a real customer would redirect to a thank-you
+      // page and fire tracking pixels (LinkedIn conversion, GA etc.)
+      onSaved: function (event) {
+        showStatus(
+          "You're booked. A calendar invite for " +
+          (event && event.startTime ? event.startTime : "your chosen time") +
+          " is on its way to " + data["form-email"] + ".", "ok"
+        );
+      }
+    });
   });
+
 });
 </script>
 </body>
