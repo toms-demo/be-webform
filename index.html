@@ -334,6 +334,66 @@ function applyTheme(key) {
   return key;
 }
 
+/* =========================================================
+   HIDDEN TEST-DATA FILLER
+   ---------------------------------------------------------
+   Click the small "Ref." tag at the top of the form card, or
+   press Alt+Shift+F, to fill the form with a random entry.
+   Format: "Full name | Company | funding option # | type option #"
+   Option numbers index the <select> lists (0-based), so values
+   always match whatever the selects contain. Emails are built
+   from the name on example.com (reserved, never delivers), so
+   booking invites to them go nowhere.
+========================================================== */
+const TEST_ENTRIES = [
+  "Amelia Hartwell|Hartwell & Finch Ltd|2|0", "Oliver Brandt|Brandt Logistics|1|0",
+  "Priya Raman|Raman Textiles|3|0", "Jacob Whitlock|Whitlock Motors|0|0",
+  "Sophie Lindqvist|Lindqvist Design Studio|1|0", "Marcus Oyelaran|Oyelaran Haulage|2|1",
+  "Chloe Ashdown|Ashdown Bakeries|0|0", "Daniel Kowalczyk|Kowalczyk Joinery|1|0",
+  "Isla Fairbairn|Fairbairn Catering|2|0", "Tariq Mahmood|Mahmood Wholesale|3|1",
+  "Hannah Pemberton|Pemberton Print|1|0", "Lucas Ferreira|Ferreira Tiles|2|0",
+  "Grace Tan|Tan & Daughters Grocers|0|0", "Rhys Llewellyn|Llewellyn Plant Hire|2|0",
+  "Nadia Petrova|Petrova Fabrics|1|1", "Callum Reid|Reid Scaffolding|3|0",
+  "Eleanor Voss|Voss Optical|1|0", "Samuel Adeyemi|Adeyemi Cleaning Services|0|0",
+  "Freya Calloway|Calloway Interiors|2|0", "Ben Hargreaves|Hargreaves Brewing Co|2|0",
+  "Anika Sharma|Sharma Pharmacy Group|3|1", "Joshua Penrose|Penrose Surf Co|0|0",
+  "Maya Goldberg|Goldberg Studio|1|0", "Thomas Eriksen|Eriksen Marine|2|0",
+  "Zara Kaplan|Kaplan Events|1|1", "Ethan Moriarty|Moriarty Roofing|2|0",
+  "Leila Hassan|Hassan Imports|3|0", "Harvey Delacroix|Delacroix Wines|2|1",
+  "Poppy Winterbourne|Winterbourne Florists|0|0", "Niall Gallagher|Gallagher Fitness|1|0",
+  "Esme Castellano|Castellano Ceramics|1|0", "Kofi Mensah|Mensah Auto Repairs|2|0",
+  "Beatrice Lindgren|Lindgren Bookbinding|0|0", "Rory Fitzpatrick|Fitzpatrick Farms|3|0",
+  "Yasmin Qureshi|Qureshi Textiles|2|1", "Archie Blackwood|Blackwood Timber|2|0",
+  "Ingrid Solheim|Solheim Outdoor|1|0", "Dominic Navarro|Navarro Coffee Roasters|1|0",
+  "Tilly Okonkwo|Okonkwo Fashion|2|0", "Felix Brandvold|Brandvold Engineering|3|0",
+  "Mei Chen|Chen Dim Sum Group|2|0", "Jasper Quill|Quill & Co Stationers|0|0",
+  "Rosalind Achebe|Achebe Legal Services|1|1", "Hugo Lancaster|Lancaster Builders|3|0",
+  "Saoirse Doyle|Doyle Physio Clinics|1|0", "Idris Bakr|Bakr Kitchens|2|0",
+  "Clementine Rossi|Rossi Gelato|0|0", "Magnus Thorne|Thorne Precision Tools|3|1",
+  "Willa Okafor|Okafor Digital|1|0", "Gideon Marsh|Marsh Landscaping|2|0"
+];
+
+function fillTestData() {
+  const pick = TEST_ENTRIES[Math.floor(Math.random() * TEST_ENTRIES.length)].split("|");
+  const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, ".").replace(/^\.|\.$/g, "");
+  const funding = document.getElementById("funding_volume");
+  const type = document.getElementById("business_type");
+  const values = {
+    contact_name: pick[0],
+    contact_email: slug(pick[0]) + "@example.com",
+    contact_company: pick[1]
+  };
+  Object.keys(values).forEach(id => {
+    const el = document.getElementById(id);
+    el.value = values[id];
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  funding.selectedIndex = Math.min(+pick[2], funding.options.length - 1);
+  type.selectedIndex = Math.min(+pick[3], type.options.length - 1);
+  document.getElementById("ab-status").className = "status";
+  console.log("Test data filled:", collectFormData());
+}
+
 function showStatus(msg, kind) {
   const el = document.getElementById("ab-status");
   el.textContent = msg;
@@ -361,6 +421,12 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   document.getElementById("brand").addEventListener("click", cycleTheme);
   document.getElementById("theme-toggle").addEventListener("click", cycleTheme);
+
+  // Hidden test-data filler: click the "Ref." tag on the form card, or Alt+Shift+F.
+  document.getElementById("t-formref").addEventListener("click", fillTestData);
+  document.addEventListener("keydown", function (e) {
+    if (e.altKey && e.shiftKey && e.code === "KeyF") { e.preventDefault(); fillTestData(); }
+  });
 
   document.getElementById("ab-submit").addEventListener("click", function () {
     const data = collectFormData();
