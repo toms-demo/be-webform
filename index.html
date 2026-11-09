@@ -151,6 +151,27 @@
   .status.ok{background:var(--ok-bg);border:1px solid var(--ok-line);color:var(--moss-dark)}
   .status.warn{background:#fdf6ec;border:1px solid #f0dcb8;color:#8a6413}
 
+  /* booking confirmation: replaces the form once a meeting is saved */
+  .confirm{padding:40px 24px 32px;text-align:center}
+  .confirm[hidden],.form-body[hidden]{display:none}
+  .confirm-tick{
+    width:56px;height:56px;border-radius:50%;margin:0 auto 20px;
+    background:var(--moss);color:#fff;display:grid;place-items:center;
+  }
+  .confirm-tick svg{width:28px;height:28px}
+  .confirm-title{font-family:var(--display);font-size:26px;color:var(--ink);font-weight:600;margin-bottom:8px}
+  .confirm-text{font-size:15px;margin-bottom:22px}
+  .confirm-when{
+    border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:8px;
+    background:var(--paper);color:var(--ink);font-weight:600;font-size:16px;
+  }
+  .confirm-who{font-size:13px;color:#9aa3ae;margin-bottom:24px}
+  .confirm-again{
+    font:inherit;font-size:14px;font-weight:600;color:var(--moss);background:none;
+    border:1px solid var(--line);border-radius:6px;padding:10px 18px;cursor:pointer;
+  }
+  .confirm-again:hover{border-color:var(--moss)}
+
   footer{border-top:1px solid var(--line);padding:28px 0;font-size:13px;color:#9aa3ae;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
   footer a{color:#9aa3ae;text-decoration:none;margin-right:20px}
 </style>
@@ -190,7 +211,7 @@
       <span class="form-title" id="t-formtitle">Speak to a specialist</span>
       <span class="form-ref" id="t-formref">Ref. AB-26</span>
     </div>
-    <div class="form-body">
+    <div class="form-body" id="ab-form">
       <!-- NOTE: these input IDs only need to match collectFormData()'s
            getElementById() calls above — they're mapped to the Form
            Connector's field IDs there, not used directly. -->
@@ -225,6 +246,18 @@
       <button type="button" class="submit-btn" id="ab-submit">Check my options</button>
       <p class="form-note" id="t-note">No credit check to enquire. Decisions typically same day.</p>
       <div class="status" id="ab-status" role="status"></div>
+    </div>
+
+    <!-- Shown instead of the form once the booking is saved. -->
+    <div class="confirm" id="ab-confirm" role="status" aria-live="polite" hidden>
+      <div class="confirm-tick" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+      </div>
+      <h2 class="confirm-title" id="t-confirmtitle">You're booked in</h2>
+      <p class="confirm-text" id="t-confirmtext">A funding specialist will speak to you at the time below.</p>
+      <div class="confirm-when" id="ab-when"></div>
+      <p class="confirm-who" id="ab-who"></p>
+      <button type="button" class="confirm-again" id="ab-again">Book another meeting</button>
     </div>
   </aside>
 </main>
@@ -286,6 +319,8 @@ const THEMES = {
     formTitle: "Speak to a specialist", formRef: "Ref. AB-26",
     button: "Check my options",
     note: "No credit check to enquire. Decisions typically same day.",
+    confirmTitle: "You're booked in",
+    confirmText: "A funding specialist will speak to you at the time below.",
     foot: ["Privacy", "Complaints", "Careers"],
     legal: "© 2026 Alderbrook Capital Ltd. Fictional company for demonstration purposes."
   },
@@ -302,6 +337,8 @@ const THEMES = {
     formTitle: "Book a demo", formRef: "Ref. CV-26",
     button: "Book a demo",
     note: "No credit card needed. Demos typically within a day.",
+    confirmTitle: "Your demo is booked",
+    confirmText: "A solutions specialist will meet you at the time below.",
     foot: ["Privacy", "Security", "Careers"],
     legal: "© 2026 Cloudvane Inc. Fictional company for demonstration purposes."
   }
@@ -323,6 +360,7 @@ function applyTheme(key) {
   document.getElementById("t-aria").setAttribute("aria-label", t.aria);
   set("t-formtitle", t.formTitle); set("t-formref", t.formRef);
   set("ab-submit", t.button); set("t-note", t.note);
+  set("t-confirmtitle", t.confirmTitle); set("t-confirmtext", t.confirmText);
   t.foot.forEach((v, i) => set("t-foot" + (i + 1), v));
   set("t-legal", t.legal);
   set("theme-toggle", t.badge + " ⇄");
@@ -394,6 +432,32 @@ function fillTestData() {
   console.log("Test data filled:", collectFormData());
 }
 
+// Swap the form for the "you're booked" panel. The saved-event object's
+// exact shape isn't documented, so the time is formatted defensively and
+// the raw event is logged to the console to check against.
+function showConfirmation(event, data) {
+  console.log("Booking saved, event payload:", event);
+  let when = "Your chosen time";
+  const raw = event && (event.startTime || event.start || event.startDateTime);
+  if (raw) {
+    const d = new Date(isNaN(raw) ? raw : +raw);
+    when = isNaN(d) ? String(raw)
+      : d.toLocaleString("en-GB", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+  }
+  document.getElementById("ab-when").textContent = when;
+  document.getElementById("ab-who").textContent =
+    "A calendar invite is on its way to " + (data["form-email"] || "your inbox") + ".";
+  document.getElementById("ab-status").className = "status";
+  document.getElementById("ab-form").hidden = true;
+  document.getElementById("ab-confirm").hidden = false;
+}
+
+function resetBooking() {
+  ["contact_name", "contact_email", "contact_company"].forEach(id => { document.getElementById(id).value = ""; });
+  document.getElementById("ab-confirm").hidden = true;
+  document.getElementById("ab-form").hidden = false;
+}
+
 function showStatus(msg, kind) {
   const el = document.getElementById("ab-status");
   el.textContent = msg;
@@ -421,6 +485,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   document.getElementById("brand").addEventListener("click", cycleTheme);
   document.getElementById("theme-toggle").addEventListener("click", cycleTheme);
+  document.getElementById("ab-again").addEventListener("click", resetBooking);
 
   // Hidden test-data filler: click the "Ref." tag on the form card, or Alt+Shift+F.
   document.getElementById("t-formref").addEventListener("click", fillTestData);
@@ -455,11 +520,7 @@ document.addEventListener("DOMContentLoaded", function () {
       // This is where a real customer would redirect to a thank-you
       // page and fire tracking pixels (LinkedIn conversion, GA etc.)
       onSaved: function (event) {
-        showStatus(
-          "You're booked. A calendar invite for " +
-          (event && event.startTime ? event.startTime : "your chosen time") +
-          " is on its way to " + data["form-email"] + ".", "ok"
-        );
+        showConfirmation(event, data);
       }
     });
   });
