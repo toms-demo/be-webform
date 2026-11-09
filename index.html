@@ -36,7 +36,30 @@
     --line:#d9ddd6;       /* hairline rules */
     --slate:#4b5563;      /* body text */
     --card:#ffffff;
+    --ring:rgba(31,122,92,.14);
+    --ok-bg:#eaf5f0;
+    --ok-line:#bfe0d2;
+    --display:'Newsreader',serif;
   }
+  /* B2B SaaS skin: same layout, different palette + display font.
+     Names (--moss etc.) are kept so every rule above still applies. */
+  :root[data-theme="saas"]{
+    --ink:#0f172a;
+    --paper:#f8f9fc;
+    --moss:#4f46e5;
+    --moss-dark:#3730a3;
+    --line:#e2e5f0;
+    --ring:rgba(79,70,229,.16);
+    --ok-bg:#eef0ff;
+    --ok-line:#c7cbf7;
+    --display:'Inter',system-ui,sans-serif;
+  }
+  :root[data-theme="saas"] h1{font-weight:600;letter-spacing:-.025em}
+  :root[data-theme="saas"] .brand-mark{border-radius:9px;background:var(--moss);border-color:var(--moss);color:#fff}
+  :root[data-theme="saas"] .fact-num{font-weight:600}
+  .brand{cursor:pointer}
+  .env-badge{background:none;font-family:inherit;cursor:pointer}
+  .env-badge:hover{border-color:var(--moss);color:var(--ink)}
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
   @media (prefers-reduced-motion: reduce){
@@ -62,10 +85,10 @@
   .brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--ink)}
   .brand-mark{
     width:34px;height:34px;border:2px solid var(--ink);
-    display:grid;place-items:center;font-family:'Newsreader',serif;
+    display:grid;place-items:center;font-family:var(--display);
     font-weight:600;font-size:19px;line-height:1;
   }
-  .brand-name{font-family:'Newsreader',serif;font-size:20px;font-weight:600;letter-spacing:.01em}
+  .brand-name{font-family:var(--display);font-size:20px;font-weight:600;letter-spacing:.01em}
   .nav-links{display:flex;gap:28px;font-size:14px}
   .nav-links a{color:var(--slate);text-decoration:none}
   .nav-links a:hover{color:var(--ink)}
@@ -83,7 +106,7 @@
     color:var(--moss);font-weight:600;margin-bottom:16px;
   }
   h1{
-    font-family:'Newsreader',serif;font-weight:500;color:var(--ink);
+    font-family:var(--display);font-weight:500;color:var(--ink);
     font-size:clamp(34px,4.5vw,52px);line-height:1.12;letter-spacing:-.01em;
     margin-bottom:20px;
   }
@@ -91,7 +114,7 @@
   .lede{font-size:18px;max-width:52ch;margin-bottom:36px}
 
   .facts{border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding-top:28px;max-width:560px}
-  .fact-num{font-family:'Newsreader',serif;font-size:30px;color:var(--ink);font-weight:500}
+  .fact-num{font-family:var(--display);font-size:30px;color:var(--ink);font-weight:500}
   .fact-label{font-size:13px}
 
   /* form card: styled like a term sheet */
@@ -104,7 +127,7 @@
     border-bottom:1px solid var(--line);padding:20px 24px;
     display:flex;justify-content:space-between;align-items:baseline;
   }
-  .form-title{font-family:'Newsreader',serif;font-size:20px;color:var(--ink);font-weight:600}
+  .form-title{font-family:var(--display);font-size:20px;color:var(--ink);font-weight:600}
   .form-ref{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#9aa3ae}
   .form-body{padding:24px}
   .field{margin-bottom:18px}
@@ -113,7 +136,7 @@
     width:100%;padding:11px 12px;font:inherit;font-size:15px;color:var(--ink);
     border:1px solid var(--line);border-radius:6px;background:#fff;
   }
-  input:focus,select:focus{border-color:var(--moss);outline:none;box-shadow:0 0 0 3px rgba(31,122,92,.14)}
+  input:focus,select:focus{border-color:var(--moss);outline:none;box-shadow:0 0 0 3px var(--ring)}
   .submit-btn{
     width:100%;padding:13px;font:inherit;font-size:15px;font-weight:600;
     color:#fff;background:var(--moss);border:none;border-radius:6px;cursor:pointer;
@@ -125,7 +148,7 @@
   /* status / outcome messaging under the form */
   .status{display:none;margin-top:16px;padding:14px 16px;border-radius:6px;font-size:14px}
   .status.show{display:block}
-  .status.ok{background:#eaf5f0;border:1px solid #bfe0d2;color:var(--moss-dark)}
+  .status.ok{background:var(--ok-bg);border:1px solid var(--ok-line);color:var(--moss-dark)}
   .status.warn{background:#fdf6ec;border:1px solid #f0dcb8;color:#8a6413}
 
   footer{border-top:1px solid var(--line);padding:28px 0;font-size:13px;color:#9aa3ae;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
@@ -136,35 +159,36 @@
 
 <header>
   <div class="wrap nav">
-    <a class="brand" href="#">
-      <span class="brand-mark">A</span>
-      <span class="brand-name">Alderbrook Capital</span>
+    <!-- Clicking the logo (or the badge) switches the demo's industry skin. -->
+    <a class="brand" id="brand" href="#" title="Click to switch demo industry">
+      <span class="brand-mark" id="t-mark">A</span>
+      <span class="brand-name" id="t-brand">Alderbrook Capital</span>
     </a>
     <nav class="nav-links" aria-label="Site">
-      <a href="#">Products</a>
-      <a href="#">Brokers</a>
-      <a href="#">About</a>
-      <span class="env-badge">Production</span>
+      <a href="#" id="t-nav1">Products</a>
+      <a href="#" id="t-nav2">Brokers</a>
+      <a href="#" id="t-nav3">About</a>
+      <button type="button" class="env-badge" id="theme-toggle" title="Switch demo industry">Production</button>
     </nav>
   </div>
 </header>
 
 <main class="wrap hero">
   <section>
-    <p class="eyebrow">Working capital, without the wait</p>
-    <h1>Funding decisions in hours, <em>not weeks</em>.</h1>
-    <p class="lede">Alderbrook provides revenue-based financing from £50k to £2m for growing businesses. No warm intros, no six-week underwriting queue. Tell us about your business and speak to a funding specialist this week.</p>
+    <p class="eyebrow" id="t-eyebrow">Working capital, without the wait</p>
+    <h1 id="t-h1">Funding decisions in hours, <em>not weeks</em>.</h1>
+    <p class="lede" id="t-lede">Alderbrook provides revenue-based financing from £50k to £2m for growing businesses. No warm intros, no six-week underwriting queue. Tell us about your business and speak to a funding specialist this week.</p>
     <div class="facts">
-      <div><div class="fact-num">£340m</div><div class="fact-label">Deployed since 2019</div></div>
-      <div><div class="fact-num">4 hrs</div><div class="fact-label">Median decision time</div></div>
-      <div><div class="fact-num">1,900+</div><div class="fact-label">Businesses funded</div></div>
+      <div><div class="fact-num" id="t-f1n">£340m</div><div class="fact-label" id="t-f1l">Deployed since 2019</div></div>
+      <div><div class="fact-num" id="t-f2n">4 hrs</div><div class="fact-label" id="t-f2l">Median decision time</div></div>
+      <div><div class="fact-num" id="t-f3n">1,900+</div><div class="fact-label" id="t-f3l">Businesses funded</div></div>
     </div>
   </section>
 
-  <aside class="form-card" aria-label="Speak to a funding specialist">
+  <aside class="form-card" id="t-aria" aria-label="Speak to a funding specialist">
     <div class="form-head">
-      <span class="form-title">Speak to a specialist</span>
-      <span class="form-ref">Ref. AB-26</span>
+      <span class="form-title" id="t-formtitle">Speak to a specialist</span>
+      <span class="form-ref" id="t-formref">Ref. AB-26</span>
     </div>
     <div class="form-body">
       <!-- NOTE: these input IDs only need to match collectFormData()'s
@@ -199,15 +223,15 @@
         </select>
       </div>
       <button type="button" class="submit-btn" id="ab-submit">Check my options</button>
-      <p class="form-note">No credit check to enquire. Decisions typically same day.</p>
+      <p class="form-note" id="t-note">No credit check to enquire. Decisions typically same day.</p>
       <div class="status" id="ab-status" role="status"></div>
     </div>
   </aside>
 </main>
 
 <footer class="wrap">
-  <div><a href="#">Privacy</a><a href="#">Complaints</a><a href="#">Careers</a></div>
-  <div>© 2026 Alderbrook Capital Ltd. Fictional company for demonstration purposes.</div>
+  <div><a href="#" id="t-foot1">Privacy</a><a href="#" id="t-foot2">Complaints</a><a href="#" id="t-foot3">Careers</a></div>
+  <div id="t-legal">© 2026 Alderbrook Capital Ltd. Fictional company for demonstration purposes.</div>
 </footer>
 
 <script>
@@ -239,6 +263,77 @@ function collectFormData() {
   };
 }
 
+/* =========================================================
+   DEMO INDUSTRY SKINS
+   ---------------------------------------------------------
+   Copy-only. The form fields, their values, collectFormData()
+   and the Booking Engine call are identical for every skin.
+   Click the logo or the badge to cycle. Also selectable with
+   ?theme=saas (or ?theme=lending) so a link opens straight
+   into a skin. To add another industry, add an entry here.
+========================================================== */
+const THEMES = {
+  lending: {
+    badge: "Financial services",
+    title: "Alderbrook Capital — Working capital for growing businesses",
+    mark: "A", brand: "Alderbrook Capital",
+    nav: ["Products", "Brokers", "About"],
+    eyebrow: "Working capital, without the wait",
+    h1: "Funding decisions in hours, <em>not weeks</em>.",
+    lede: "Alderbrook provides revenue-based financing from £50k to £2m for growing businesses. No warm intros, no six-week underwriting queue. Tell us about your business and speak to a funding specialist this week.",
+    facts: [["£340m", "Deployed since 2019"], ["4 hrs", "Median decision time"], ["1,900+", "Businesses funded"]],
+    aria: "Speak to a funding specialist",
+    formTitle: "Speak to a specialist", formRef: "Ref. AB-26",
+    button: "Check my options",
+    note: "No credit check to enquire. Decisions typically same day.",
+    foot: ["Privacy", "Complaints", "Careers"],
+    legal: "© 2026 Alderbrook Capital Ltd. Fictional company for demonstration purposes."
+  },
+  saas: {
+    badge: "B2B SaaS",
+    title: "Cloudvane — Revenue intelligence for B2B SaaS teams",
+    mark: "C", brand: "Cloudvane",
+    nav: ["Platform", "Integrations", "About"],
+    eyebrow: "Revenue intelligence, without the busywork",
+    h1: "Pipeline you can see, <em>forecasts you can trust</em>.",
+    lede: "Cloudvane is the revenue platform for B2B SaaS teams from seed to Series C. Connect your CRM in an afternoon, see the real risk in every deal, and talk to a solutions specialist this week.",
+    facts: [["2,400+", "SaaS teams onboarded"], ["14 days", "Median time to value"], ["31%", "Faster sales cycles"]],
+    aria: "Book a demo with a solutions specialist",
+    formTitle: "Book a demo", formRef: "Ref. CV-26",
+    button: "Book a demo",
+    note: "No credit card needed. Demos typically within a day.",
+    foot: ["Privacy", "Security", "Careers"],
+    legal: "© 2026 Cloudvane Inc. Fictional company for demonstration purposes."
+  }
+};
+const THEME_KEYS = Object.keys(THEMES);
+
+function applyTheme(key) {
+  const t = THEMES[key] || THEMES[THEME_KEYS[0]];
+  key = THEMES[key] ? key : THEME_KEYS[0];
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  document.documentElement.setAttribute("data-theme", key);
+  document.title = t.title;
+  set("t-mark", t.mark); set("t-brand", t.brand);
+  t.nav.forEach((v, i) => set("t-nav" + (i + 1), v));
+  set("t-eyebrow", t.eyebrow);
+  document.getElementById("t-h1").innerHTML = t.h1;   // our own static copy, contains <em>
+  set("t-lede", t.lede);
+  t.facts.forEach((f, i) => { set("t-f" + (i + 1) + "n", f[0]); set("t-f" + (i + 1) + "l", f[1]); });
+  document.getElementById("t-aria").setAttribute("aria-label", t.aria);
+  set("t-formtitle", t.formTitle); set("t-formref", t.formRef);
+  set("ab-submit", t.button); set("t-note", t.note);
+  t.foot.forEach((v, i) => set("t-foot" + (i + 1), v));
+  set("t-legal", t.legal);
+  set("theme-toggle", t.badge + " ⇄");
+  try { localStorage.setItem("be-demo-theme", key); } catch (e) {}
+  try {
+    const u = new URL(location.href); u.searchParams.set("theme", key);
+    history.replaceState(null, "", u);
+  } catch (e) {}
+  return key;
+}
+
 function showStatus(msg, kind) {
   const el = document.getElementById("ab-status");
   el.textContent = msg;
@@ -250,6 +345,22 @@ function showStatus(msg, kind) {
 // inline block has no "defer" of its own, so without this wrapper it
 // would run immediately during parsing, before the button exists yet.
 document.addEventListener("DOMContentLoaded", function () {
+
+  // Pick the starting skin: ?theme= wins, then last choice, then default.
+  let current = THEME_KEYS[0];
+  try {
+    const fromUrl = new URLSearchParams(location.search).get("theme");
+    const saved = localStorage.getItem("be-demo-theme");
+    current = THEMES[fromUrl] ? fromUrl : (THEMES[saved] ? saved : current);
+  } catch (e) {}
+  current = applyTheme(current);
+
+  function cycleTheme(e) {
+    e.preventDefault();
+    current = applyTheme(THEME_KEYS[(THEME_KEYS.indexOf(current) + 1) % THEME_KEYS.length]);
+  }
+  document.getElementById("brand").addEventListener("click", cycleTheme);
+  document.getElementById("theme-toggle").addEventListener("click", cycleTheme);
 
   document.getElementById("ab-submit").addEventListener("click", function () {
     const data = collectFormData();
